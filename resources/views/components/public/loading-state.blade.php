@@ -1,0 +1,3 @@
+<div {{ $attributes->merge(['class' => 'animate-pulse rounded-lg bg-slate-100 p-6 text-sm text-slate-500']) }}>
+    {{ __('website.search') }}...
+</div>

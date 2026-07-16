@@ -1,0 +1,10 @@
+<x-admin.resource-show
+    :resource="$resource"
+    :title="$title"
+    :id="$id"
+    :item="$item"
+    :fields="$fields"
+    :translation-fields="$translationFields"
+    :translation-values="$translationValues"
+    :languages="$languages"
+/>
