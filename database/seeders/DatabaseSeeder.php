@@ -19,6 +19,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Clear Spatie's permission cache before seeding. After migrate:fresh
+        // the permission tables are empty, but the cached set survives the
+        // migration — so the first givePermissionTo/syncRoles throws
+        // "PermissionDoesNotExist" against a stale cache. This is why a fresh
+        // seed failed on the server.
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $user = User::query()->firstOrNew(['email' => 'test@example.com']);
         $user->forceFill([
             'name' => 'Test User',

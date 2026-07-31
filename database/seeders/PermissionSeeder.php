@@ -37,6 +37,12 @@ final class PermissionSeeder extends Seeder
             }
         }
 
+        // Flush again now that the permissions exist: syncPermissions() resolves
+        // each name through the registrar's cache, which was populated (empty or
+        // stale) before this loop created the rows. Without this, syncing throws
+        // "PermissionDoesNotExist" on a fresh database.
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         // Full access to everything.
         Role::findOrCreate('admin', 'web')->syncPermissions($permissions);
 
