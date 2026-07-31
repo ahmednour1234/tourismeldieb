@@ -8,6 +8,7 @@ use App\Models\BlogPost;
 use App\Models\Destination;
 use App\Models\Testimonial;
 use App\Models\TourCategory;
+use App\Services\Support\CurrencyConverter;
 use App\Services\Support\SeoService;
 use App\Services\Support\UiSettingsService;
 use Illuminate\Support\Facades\DB;
@@ -388,7 +389,12 @@ final class PublicPageService
             return null;
         }
 
-        return __('website.price_from', ['price' => $this->formatMinor((int) $price->amount_minor, (int) $price->decimal_places, (string) $price->symbol, (string) $price->code)]);
+        return $this->priceLabel(
+            (int) $price->amount_minor,
+            (string) $price->code,
+            (string) $price->symbol,
+            (int) $price->decimal_places,
+        );
     }
 
     /**
@@ -453,7 +459,12 @@ final class PublicPageService
             return null;
         }
 
-        return __('website.price_from', ['price' => $this->formatMinor((int) $price->amount_minor, (int) $price->decimal_places, (string) $price->symbol, (string) $price->code)]);
+        return $this->priceLabel(
+            (int) $price->amount_minor,
+            (string) $price->code,
+            (string) $price->symbol,
+            (int) $price->decimal_places,
+        );
     }
 
     private function formatMinor(int $amountMinor, int $decimalPlaces, string $symbol, string $code): string
@@ -467,6 +478,34 @@ final class PublicPageService
         $minor = $amountMinor % $divisor;
 
         return $symbol.$major.'.'.str_pad((string) $minor, $decimalPlaces, '0', STR_PAD_LEFT).' '.$code;
+    }
+
+    /**
+     * A "from :price" label, converted into the visitor's selected currency.
+     *
+     * Both the tour-card starting price and the option price go through here, so
+     * the conversion — and the fallback when a rate is missing — live in one
+     * place rather than being duplicated per call site.
+     */
+    private function priceLabel(int $amountMinor, string $fromCode, string $symbol, int $decimalPlaces): string
+    {
+        $converted = app(CurrencyConverter::class)->convertMinor(
+            $amountMinor,
+            $fromCode,
+            $this->settingsService->currentCurrency(),
+        );
+
+        if ($converted !== null) {
+            return __('website.price_from', ['price' => $this->formatMinor(
+                $converted['amount_minor'],
+                $converted['decimal_places'],
+                $converted['symbol'],
+                $converted['code'],
+            )]);
+        }
+
+        // No rate for this pair: show the original rather than nothing.
+        return __('website.price_from', ['price' => $this->formatMinor($amountMinor, $decimalPlaces, $symbol, $fromCode)]);
     }
 
     /**

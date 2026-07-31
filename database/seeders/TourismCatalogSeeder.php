@@ -61,7 +61,7 @@ class TourismCatalogSeeder extends Seeder
         $destinations = [
             [
                 'code' => 'hurghada',
-                'image_url' => null,
+                'image_url' => 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
                 'is_featured' => true,
                 'sort_order' => 1,
                 'translations' => [
@@ -71,7 +71,7 @@ class TourismCatalogSeeder extends Seeder
             ],
             [
                 'code' => 'el-gouna',
-                'image_url' => null,
+                'image_url' => 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?auto=format&fit=crop&w=1200&q=80',
                 'is_featured' => true,
                 'sort_order' => 2,
                 'translations' => [
@@ -81,7 +81,7 @@ class TourismCatalogSeeder extends Seeder
             ],
             [
                 'code' => 'luxor',
-                'image_url' => null,
+                'image_url' => 'https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=1200&q=80',
                 'is_featured' => false,
                 'sort_order' => 3,
                 'translations' => [
@@ -118,15 +118,16 @@ class TourismCatalogSeeder extends Seeder
         }
 
         $categories = [
-            ['code' => 'sea-trips', 'sort_order' => 1, 'translations' => ['en' => ['name' => 'Sea trips', 'slug' => 'sea-trips', 'description' => 'Island days, snorkeling stops, and Red Sea swimming.'], 'ar' => ['name' => 'رحلات بحرية', 'slug' => 'sea-trips', 'description' => 'جزر وسباحة وسنوركلينج في البحر الأحمر.']]],
-            ['code' => 'desert-safari', 'sort_order' => 2, 'translations' => ['en' => ['name' => 'Desert safari', 'slug' => 'desert-safari', 'description' => 'Quad bikes, Bedouin stops, and sunset desert scenes.'], 'ar' => ['name' => 'سفاري صحراوي', 'slug' => 'desert-safari', 'description' => 'دراجات رباعية ومحطات بدوية ومشاهد الغروب.']]],
-            ['code' => 'cultural-tours', 'sort_order' => 3, 'translations' => ['en' => ['name' => 'Cultural tours', 'slug' => 'cultural-tours', 'description' => 'Temples, museums, Nile views, and guided history days.'], 'ar' => ['name' => 'رحلات ثقافية', 'slug' => 'cultural-tours', 'description' => 'معابد ومتاحف وإطلالات على النيل مع مرشدين.']]],
+            ['code' => 'sea-trips', 'image_url' => 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 1, 'translations' => ['en' => ['name' => 'Sea trips', 'slug' => 'sea-trips', 'description' => 'Island days, snorkeling stops, and Red Sea swimming.'], 'ar' => ['name' => 'رحلات بحرية', 'slug' => 'sea-trips', 'description' => 'جزر وسباحة وسنوركلينج في البحر الأحمر.']]],
+            ['code' => 'desert-safari', 'image_url' => 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 2, 'translations' => ['en' => ['name' => 'Desert safari', 'slug' => 'desert-safari', 'description' => 'Quad bikes, Bedouin stops, and sunset desert scenes.'], 'ar' => ['name' => 'سفاري صحراوي', 'slug' => 'desert-safari', 'description' => 'دراجات رباعية ومحطات بدوية ومشاهد الغروب.']]],
+            ['code' => 'cultural-tours', 'image_url' => 'https://images.unsplash.com/photo-1553913861-c0fddf2619ee?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 3, 'translations' => ['en' => ['name' => 'Cultural tours', 'slug' => 'cultural-tours', 'description' => 'Temples, museums, Nile views, and guided history days.'], 'ar' => ['name' => 'رحلات ثقافية', 'slug' => 'cultural-tours', 'description' => 'معابد ومتاحف وإطلالات على النيل مع مرشدين.']]],
         ];
 
         foreach ($categories as $category) {
             DB::table('tour_categories')->updateOrInsert(
                 ['code' => $category['code']],
                 [
+                    'image_url' => $category['image_url'] ?? null,
                     'is_featured' => true,
                     'is_active' => true,
                     'sort_order' => $category['sort_order'],
@@ -154,6 +155,7 @@ class TourismCatalogSeeder extends Seeder
         $tours = [
             [
                 'code' => 'orange-bay',
+                'image_url' => 'https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?auto=format&fit=crop&w=1200&q=80',
                 'destination' => 'hurghada',
                 'category' => 'sea-trips',
                 'duration_value' => 8,
@@ -169,6 +171,7 @@ class TourismCatalogSeeder extends Seeder
             ],
             [
                 'code' => 'quad-bike-safari',
+                'image_url' => 'https://images.unsplash.com/photo-1451337516015-6b6e9a44a8a3?auto=format&fit=crop&w=1200&q=80',
                 'destination' => 'hurghada',
                 'category' => 'desert-safari',
                 'duration_value' => 5,
@@ -184,6 +187,7 @@ class TourismCatalogSeeder extends Seeder
             ],
             [
                 'code' => 'luxor-full-day',
+                'image_url' => 'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?auto=format&fit=crop&w=1200&q=80',
                 'destination' => 'luxor',
                 'category' => 'cultural-tours',
                 'duration_value' => 12,
@@ -206,6 +210,7 @@ class TourismCatalogSeeder extends Seeder
                     'destination_id' => $this->id('destinations', 'code', $tour['destination']),
                     'tour_category_id' => $this->id('tour_categories', 'code', $tour['category']),
                     'status' => 'published',
+                    'image_url' => $tour['image_url'] ?? null,
                     'duration_value' => $tour['duration_value'],
                     'duration_unit' => $tour['duration_unit'],
                     'tour_type' => $tour['tour_type'],

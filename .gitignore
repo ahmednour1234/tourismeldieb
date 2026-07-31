@@ -31,3 +31,10 @@ Thumbs.db
 
 # Stray vendor tree from an aborted composer create-project (~964 MB).
 /tourismeldieb-tmp
+
+# Hero video is kept out of git: the current file is ~30MB (too large to
+# commit), and it is meant to be replaced with a compressed 2-5MB clip per
+# deployment. The hero falls back to the committed poster image when the video
+# is absent, so the site works without it. Drop your clip at
+# public/videos/hero.mp4 on the server.
+/public/videos/*.mp4

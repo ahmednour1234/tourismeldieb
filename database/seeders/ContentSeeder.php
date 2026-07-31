@@ -32,6 +32,7 @@ final class ContentSeeder extends Seeder
                 'status' => 'published',
                 'is_featured' => true,
                 'sort_order' => 0,
+                'image_url' => 'https://images.unsplash.com/photo-1682687982501-1e58ab814714?auto=format&fit=crop&w=1200&q=80',
                 'published_at' => Carbon::now()->subDays(7),
             ],
         );

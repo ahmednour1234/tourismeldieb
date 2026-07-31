@@ -1,8 +1,14 @@
 <x-layouts.public :seo="$seo">
     <section class="relative isolate flex min-h-[88vh] items-center overflow-hidden bg-slate-950 text-white">
-        {{-- Slow Ken Burns drift on a self-hosted image (no external hotlink,
-             no video file). The wrapper is scaled so the pan never exposes an
-             edge. --}}
+        {{-- Looping background video, with the self-hosted image as its poster.
+             The image shows instantly while the video loads (and stays if the
+             browser can't play it, or if the visitor prefers reduced motion —
+             see the JS that skips loading the video in that case). The image
+             keeps its slow Ken Burns drift as the fallback.
+
+             NOTE: hero.mp4 is currently ~30MB, which is heavy. Replace it with a
+             compressed 2-5MB clip (720p, ~2Mbps, muted, a 3-5s loop) and this
+             markup needs no change. --}}
         <div class="absolute inset-0 -z-10 overflow-hidden">
             <img
                 class="hero-media h-full w-full object-cover"
@@ -10,6 +16,22 @@
                 alt=""
                 fetchpriority="high"
             >
+            <video
+                class="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-1000 data-[ready]:opacity-100"
+                poster="{{ asset('images/hero/red-sea.jpg') }}"
+                muted
+                loop
+                playsinline
+                preload="none"
+                x-data
+                x-init="
+                    if (! window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                        $el.src = '{{ asset('videos/hero.mp4') }}';
+                        $el.play().then(() => $el.setAttribute('data-ready', '')).catch(() => {});
+                    }
+                "
+                aria-hidden="true"
+            ></video>
         </div>
 
         {{-- Layered wash: a deep diagonal for text contrast, plus a breathing

@@ -17,12 +17,18 @@ final class CurrencySwitcher extends Component
         $this->currency = $settingsService->currentCurrency();
     }
 
-    public function selectCurrency(string $currency, UiSettingsService $settingsService): void
+    public function selectCurrency(string $currency, UiSettingsService $settingsService): mixed
     {
         abort_unless($settingsService->isActiveCurrency($currency), 404);
 
-        session(['currency' => strtoupper($currency)]);
-        $this->currency = strtoupper($currency);
+        session(['currency' => mb_strtoupper($currency)]);
+        $this->currency = mb_strtoupper($currency);
+
+        // Prices are computed server-side per page render, so the current page
+        // must reload for the new currency to take effect — updating the session
+        // alone left every price unchanged, which is why the switcher looked
+        // dead. redirect(request header) reloads wherever the visitor is.
+        return $this->redirect(request()->header('Referer', url('/')), navigate: true);
     }
 
     public function render(UiSettingsService $settingsService): View
