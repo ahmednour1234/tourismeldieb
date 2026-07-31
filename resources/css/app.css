@@ -33,3 +33,92 @@ html {
 .skip-link:focus {
     top: 1rem;
 }
+
+/* -------------------------------------------------------------------------
+   Motion
+   Every animation here is disabled under prefers-reduced-motion at the end of
+   this block — motion is decorative, never the only way to perceive anything.
+   ------------------------------------------------------------------------- */
+
+/* Hero: a slow Ken Burns drift on the background image. No video file, so it
+   costs no bytes and works on every device and connection. */
+@keyframes hero-pan {
+    0%   { transform: scale(1.08) translate3d(0, 0, 0); }
+    100% { transform: scale(1.16) translate3d(-1.5%, -1.5%, 0); }
+}
+
+.hero-media {
+    animation: hero-pan 28s ease-in-out infinite alternate;
+    will-change: transform;
+}
+
+/* A soft aurora that breathes over the hero, giving the flat overlay life. */
+@keyframes hero-aurora {
+    0%,  100% { opacity: 0.55; transform: translate3d(0, 0, 0) scale(1); }
+    50%       { opacity: 0.8;  transform: translate3d(2%, -2%, 0) scale(1.1); }
+}
+
+.hero-aurora {
+    animation: hero-aurora 14s ease-in-out infinite;
+    will-change: transform, opacity;
+}
+
+/* The waistline wave at the foot of the hero, drifting sideways forever. */
+@keyframes wave-drift {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+.wave-drift {
+    animation: wave-drift 18s linear infinite;
+}
+
+/* Reveal-on-scroll. Elements start shifted + transparent; the .is-visible
+   class (added by an IntersectionObserver) settles them into place. The
+   starting state lives behind [data-reveal] so content is never hidden if JS
+   fails to load — see the no-JS fallback below. */
+@media (prefers-reduced-motion: no-preference) {
+    [data-reveal] {
+        opacity: 0;
+        transform: translateY(1.5rem);
+        transition:
+            opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        transition-delay: var(--reveal-delay, 0ms);
+    }
+
+    [data-reveal].is-visible {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* If JS never runs, the observer never fires, so force everything visible. */
+.no-js [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-media,
+    .hero-aurora,
+    .wave-drift {
+        animation: none !important;
+    }
+
+    [data-reveal] {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
+/* Stagger reveals within a grid so cards cascade rather than snap in together.
+   Applied via a parent [data-reveal-group]; the delay compounds down the row. */
+@media (prefers-reduced-motion: no-preference) {
+    [data-reveal-group] > [data-reveal]:nth-child(2) { --reveal-delay: 80ms; }
+    [data-reveal-group] > [data-reveal]:nth-child(3) { --reveal-delay: 160ms; }
+    [data-reveal-group] > [data-reveal]:nth-child(4) { --reveal-delay: 240ms; }
+    [data-reveal-group] > [data-reveal]:nth-child(5) { --reveal-delay: 320ms; }
+    [data-reveal-group] > [data-reveal]:nth-child(6) { --reveal-delay: 400ms; }
+}

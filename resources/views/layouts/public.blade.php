@@ -7,7 +7,10 @@
     $seo = $seo ?? app(\App\Services\Support\SeoService::class)->page();
 @endphp
 <!DOCTYPE html>
-<html lang="{{ $currentLocale }}" dir="{{ $direction }}">
+{{-- `no-js` is removed by app.js the moment it runs. While present it forces
+     [data-reveal] content visible, so a blocked bundle never leaves the page
+     blank. --}}
+<html lang="{{ $currentLocale }}" dir="{{ $direction }}" class="no-js">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -1,8 +1,11 @@
 @props(['tour'])
-<article class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+<article data-reveal class="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-teal-200 hover:shadow-xl hover:shadow-slate-200/60">
     {{-- alt is empty: the heading below already names the tour, so announcing
-         it twice is noise for a screen reader. --}}
-    <x-public.image :src="$tour['image']" />
+         it twice is noise for a screen reader. The image sits in a clipped
+         frame so it can scale on hover without spilling. --}}
+    <div class="overflow-hidden">
+        <x-public.image :src="$tour['image']" class="h-52 w-full object-cover transition duration-500 group-hover:scale-105" />
+    </div>
     <div class="space-y-4 p-5">
         <div class="flex flex-wrap gap-2">
             @if ($tour['featured'])

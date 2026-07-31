@@ -40,6 +40,7 @@ return [
     'home' => [
         'meta_title' => 'Hurghada and El Gouna Tours',
         'meta_description' => 'Discover sea trips, desert safaris, private excursions, and family-friendly Red Sea activities.',
+        'hero_badge' => 'Local Red Sea travel team',
         'hero_title' => 'Red Sea tours built around your day',
         'hero_copy' => 'Explore Hurghada, El Gouna, islands, reefs, desert trails, and private experiences with a local tourism team.',
         'destination_selector' => 'Where do you want to go?',

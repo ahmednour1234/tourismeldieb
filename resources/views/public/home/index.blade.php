@@ -1,21 +1,73 @@
 <x-layouts.public :seo="$seo">
-    <section class="relative overflow-hidden bg-slate-950 text-white">
-        <img class="absolute inset-0 h-full w-full object-cover opacity-50" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=80" alt="">
-        <div class="relative mx-auto grid min-h-[78vh] max-w-7xl content-center gap-8 px-4 py-20">
+    <section class="relative isolate flex min-h-[88vh] items-center overflow-hidden bg-slate-950 text-white">
+        {{-- Slow Ken Burns drift on a self-hosted image (no external hotlink,
+             no video file). The wrapper is scaled so the pan never exposes an
+             edge. --}}
+        <div class="absolute inset-0 -z-10 overflow-hidden">
+            <img
+                class="hero-media h-full w-full object-cover"
+                src="{{ asset('images/hero/red-sea.jpg') }}"
+                alt=""
+                fetchpriority="high"
+            >
+        </div>
+
+        {{-- Layered wash: a deep diagonal for text contrast, plus a breathing
+             teal aurora for life. Logical-property gradient so it leans from
+             the reading edge in both LTR and RTL. --}}
+        <div class="absolute inset-0 -z-10 bg-gradient-to-t from-slate-950/85 via-slate-950/35 to-transparent"></div>
+        <div class="absolute inset-0 -z-10 bg-gradient-to-br from-teal-950/45 via-transparent to-transparent"></div>
+        <div class="hero-aurora pointer-events-none absolute -start-1/4 top-0 -z-10 h-2/3 w-2/3 rounded-full bg-teal-400/20 blur-3xl"></div>
+
+        <div class="mx-auto w-full max-w-7xl px-4 py-24">
             <div class="max-w-3xl">
-                <h1 class="text-4xl font-black tracking-normal sm:text-6xl">{{ __('website.home.hero_title') }}</h1>
-                <p class="mt-5 text-lg text-slate-100">{{ __('website.home.hero_copy') }}</p>
-                <div class="mt-8 flex flex-wrap gap-3">
-                    <x-public.button :href="route('tours.all', app()->getLocale())">{{ __('website.book_now') }}</x-public.button>
-                    <x-public.button :href="route('destinations.index', app()->getLocale())" variant="secondary">{{ __('website.nav.destinations') }}</x-public.button>
+                <span data-reveal class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-medium backdrop-blur">
+                    <span class="relative flex h-2 w-2">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-300 opacity-75"></span>
+                        <span class="relative inline-flex h-2 w-2 rounded-full bg-teal-400"></span>
+                    </span>
+                    {{ __('website.home.hero_badge') }}
+                </span>
+
+                <h1 data-reveal style="--reveal-delay: 80ms" class="mt-6 text-4xl font-black leading-[1.05] tracking-tight drop-shadow-sm sm:text-6xl lg:text-7xl">
+                    {{ __('website.home.hero_title') }}
+                </h1>
+
+                <p data-reveal style="--reveal-delay: 160ms" class="mt-6 max-w-xl text-lg text-slate-100/90 sm:text-xl">
+                    {{ __('website.home.hero_copy') }}
+                </p>
+
+                <div data-reveal style="--reveal-delay: 240ms" class="mt-9 flex flex-wrap items-center gap-4">
+                    <a href="{{ route('booking.create', ['locale' => app()->getLocale()]) }}"
+                       class="group inline-flex items-center gap-2 rounded-full bg-teal-500 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-teal-900/40 transition hover:bg-teal-400 hover:shadow-xl hover:shadow-teal-900/50">
+                        {{ __('website.book_now') }}
+                        <svg class="h-4 w-4 transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    <a href="{{ route('destinations.index', app()->getLocale()) }}"
+                       class="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/5 px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition hover:bg-white/15">
+                        {{ __('website.nav.destinations') }}
+                    </a>
                 </div>
             </div>
+        </div>
+
+        {{-- Layered SVG waves along the foot of the hero, the front one drifting
+             forever. The container is 200% wide so the -50% loop is seamless. --}}
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-24 overflow-hidden sm:h-32">
+            <svg class="wave-drift h-full w-[200%]" viewBox="0 0 2880 120" preserveAspectRatio="none" aria-hidden="true">
+                <path fill="#ffffff" fill-opacity="0.12" d="M0 60c240 40 480 40 720 20s480-60 720-60 480 40 720 60 480 20 720 0v40H0z"/>
+            </svg>
+            <svg class="wave-drift absolute inset-x-0 bottom-0 h-full w-[200%]" style="animation-duration: 12s" viewBox="0 0 2880 120" preserveAspectRatio="none" aria-hidden="true">
+                <path fill="#f8fafc" d="M0 80c240 30 480 30 720 10s480-40 720-40 480 30 720 40 480 10 720-10v40H0z"/>
+            </svg>
         </div>
     </section>
 
     <section class="mx-auto max-w-7xl px-4 py-12">
         <x-public.section-heading :title="__('website.home.destination_selector')" />
-        <div class="grid gap-4 md:grid-cols-2">
+        <div data-reveal-group class="grid gap-4 md:grid-cols-2">
             @foreach ($destinations as $destination)
                 <x-public.destination-card :destination="$destination" />
             @endforeach
@@ -25,7 +77,7 @@
     <section class="bg-white py-12">
         <div class="mx-auto max-w-7xl px-4">
             <x-public.section-heading :title="__('website.home.featured_tours')" :copy="__('website.home.meta_description')" />
-            <div class="grid gap-5 lg:grid-cols-3">
+            <div data-reveal-group class="grid gap-5 lg:grid-cols-3">
                 @foreach ($featuredTours as $tour)
                     <x-public.tour-card :tour="$tour" />
                 @endforeach
@@ -36,7 +88,7 @@
     <section class="mx-auto grid max-w-7xl gap-8 px-4 py-12 lg:grid-cols-3">
         <div class="lg:col-span-2">
             <x-public.section-heading :title="__('website.home.categories')" />
-            <div class="grid gap-4 md:grid-cols-3">
+            <div data-reveal-group class="grid gap-4 md:grid-cols-3">
                 @foreach ($categories as $category)
                     <x-public.category-card :category="$category" />
                 @endforeach

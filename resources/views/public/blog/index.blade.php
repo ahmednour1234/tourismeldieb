@@ -10,7 +10,7 @@
                 <div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             @endif
 
-            <article class="flex flex-col overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-md">
+            <article data-reveal class="group flex flex-col overflow-hidden rounded-xl bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60">
                 @if ($post['image'])
                     <img src="{{ $post['image'] }}" alt="" class="h-44 w-full object-cover" loading="lazy">
                 @endif
