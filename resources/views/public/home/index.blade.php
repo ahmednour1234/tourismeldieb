@@ -97,11 +97,11 @@
         <aside class="rounded-lg bg-teal-800 p-6 text-white">
             <h2 class="text-2xl font-bold">{{ __('website.home.contact_cta') }}</h2>
             <p class="mt-3 text-teal-50">{{ __('website.booking.no_payment_notice') }}</p>
-            <div class="mt-6 flex flex-wrap gap-3">
-                <x-public.button :href="route('booking.create', ['locale' => app()->getLocale()])" variant="secondary">
+            <div class="mt-6 flex flex-wrap items-center gap-3">
+                <x-public.button :href="route('booking.create', ['locale' => app()->getLocale()])" variant="inverse">
                     {{ __('website.book_now') }}
                 </x-public.button>
-                <a href="{{ route('contact', app()->getLocale()) }}" class="inline-flex items-center text-sm font-semibold text-teal-100 underline-offset-4 hover:underline">
+                <a href="{{ route('contact', app()->getLocale()) }}" class="inline-flex items-center text-sm font-semibold text-white underline-offset-4 hover:underline">
                     {{ __('website.nav.contact') }}
                 </a>
             </div>
