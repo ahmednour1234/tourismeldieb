@@ -12,6 +12,10 @@ return [
     'have_account' => 'Already have an account?',
     'no_account' => 'New here?',
 
+    'admin_login' => 'Admin sign in',
+    'admin_login_subtitle' => 'Sign in to the control panel.',
+    'not_staff' => 'This account does not have admin access.',
+    'back_to_site' => 'Back to the website',
     'login' => 'Login',
     'login_subtitle' => 'Sign in to manage your bookings and trips.',
     'brand_headline' => 'Manage every tour, destination and price in one place.',

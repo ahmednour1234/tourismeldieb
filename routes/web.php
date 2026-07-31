@@ -28,6 +28,12 @@ Route::middleware('guest')->group(function (): void {
         ->middleware('throttle:login')
         ->name('login.authenticate');
 
+    // A dedicated staff sign-in, separate from the customer login above.
+    Route::get('/admin/login', [AuthPageController::class, 'adminLogin'])->name('admin.login');
+    Route::post('/admin/login', [AuthPageController::class, 'adminAuthenticate'])
+        ->middleware('throttle:login')
+        ->name('admin.login.authenticate');
+
     Route::get('/register', [RegisterController::class, 'show'])->name('register');
     Route::post('/register', [RegisterController::class, 'register'])
         ->middleware('throttle:6,1')
@@ -43,7 +49,6 @@ Route::middleware('guest')->group(function (): void {
         ->name('password.update');
 });
 
-Route::redirect('/admin/login', '/login')->name('admin.login.redirect');
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/email/verify', [AuthPageController::class, 'verifyEmail'])->name('verification.notice');

@@ -49,6 +49,58 @@ final class AuthPageController
     }
 
     /**
+     * The dedicated admin sign-in page, styled for staff rather than customers.
+     */
+    public function adminLogin(): View
+    {
+        return view('auth.admin-login');
+    }
+
+    /**
+     * Authenticate specifically into the admin.
+     *
+     * Unlike the public login, this rejects a valid customer account: signing
+     * in here must land on the dashboard, so a non-staff user is refused rather
+     * than silently bounced to their account.
+     */
+    public function adminAuthenticate(Request $request): RedirectResponse
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+        ]);
+
+        if (app()->environment('local') && $credentials['email'] === 'admin@hurgadaguide.example') {
+            $this->ensureDemoAdmin();
+        }
+
+        if (! Auth::attempt([...$credentials, 'is_active' => true], $request->boolean('remember'))) {
+            return back()
+                ->withErrors(['email' => __('auth.failed')])
+                ->onlyInput('email');
+        }
+
+        // Credentials were valid, but this door is staff only. A customer who
+        // guessed their way here is logged straight back out with a clear
+        // message rather than dumped on a 403 inside /admin.
+        if (! $request->user()?->isStaff()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()
+                ->withErrors(['email' => __('auth.not_staff')])
+                ->onlyInput('email');
+        }
+
+        RateLimiter::clear($this->throttleKey($request));
+
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('admin.dashboard'));
+    }
+
+    /**
      * Where a freshly authenticated user belongs.
      *
      * Staff go to the dashboard; a customer goes to their account. Sending a
