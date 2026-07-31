@@ -58,6 +58,13 @@
         <x-public.button type="submit" class="w-full justify-center">{{ __('auth.login') }}</x-public.button>
     </form>
 
+    <p class="mt-6 text-sm text-slate-500">
+        {{ __('auth.no_account') }}
+        <a class="font-semibold text-teal-700 hover:text-teal-900 hover:underline" href="{{ route('register') }}">
+            {{ __('auth.register') }}
+        </a>
+    </p>
+
     @if (app()->environment('local'))
         {{-- Local-only convenience. The demo password is posted from a hidden
              field rather than pre-filled into the visible password input, so

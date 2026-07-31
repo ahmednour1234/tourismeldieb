@@ -45,7 +45,23 @@ final class AuthPageController
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.dashboard'));
+        return redirect()->intended($this->homeFor($request->user()));
+    }
+
+    /**
+     * Where a freshly authenticated user belongs.
+     *
+     * Staff go to the dashboard; a customer goes to their account. Sending a
+     * customer to /admin — as the login used to, unconditionally — dropped them
+     * on a 403 with no way forward.
+     */
+    private function homeFor(?User $user): string
+    {
+        if ($user?->isStaff()) {
+            return route('admin.dashboard');
+        }
+
+        return route('account.dashboard', ['locale' => app()->getLocale()]);
     }
 
     private function throttleKey(Request $request): string

@@ -18,6 +18,7 @@ return [
     'cookie_notice' => 'Cookie preferences',
     'newsletter' => 'Newsletter',
     'subscribe' => 'Subscribe',
+    'newsletter_thanks' => 'Thanks — you are on the list.',
     'email_placeholder' => 'you@example.com',
     'meta' => [
         'default_title' => 'Hurgada guide',
@@ -161,6 +162,16 @@ return [
         'bookings' => 'Bookings',
         'empty_wishlist' => 'Your wishlist is empty.',
         'empty_bookings' => 'Your booking history will appear here.',
+        'total_bookings' => 'Bookings',
+        'recent_bookings' => 'Recent bookings',
+        'reference' => 'Reference',
+        'book_hint' => 'Request a new trip.',
+        'browse_hint' => 'See what else is on offer.',
+        'saved' => 'Your profile has been updated.',
+        'change_password' => 'Change password',
+        'change_password_hint' => 'Leave blank to keep your current password.',
+        'current_password' => 'Current password',
+        'new_password' => 'New password',
     ],
     'forms' => ['leave_blank' => 'Leave this field blank', 'phone' => 'Phone', 'name' => 'Name', 'email' => 'Email', 'message' => 'Message', 'send' => 'Send'],
     'errors' => [
@@ -173,6 +184,7 @@ return [
         '503' => 'The service is temporarily unavailable.',
     ],
     'booking' => [
+        'status' => ['pending' => 'Pending', 'confirmed' => 'Confirmed', 'cancelled' => 'Cancelled', 'completed' => 'Completed'],
         'title' => 'Request a booking',
         'subtitle' => 'Tell us which trip and when. We reply within one working day to confirm availability and price.',
         'your_trip' => 'Your trip',

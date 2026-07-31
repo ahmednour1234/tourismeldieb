@@ -6,8 +6,14 @@ return [
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
     'account_disabled' => 'Your account has been disabled. Please contact an administrator.',
 
+    'register' => 'Create account',
+    'register_subtitle' => 'Book faster and keep track of your trips.',
+    'name' => 'Full name',
+    'have_account' => 'Already have an account?',
+    'no_account' => 'New here?',
+
     'login' => 'Login',
-    'login_subtitle' => 'Sign in to the administration dashboard.',
+    'login_subtitle' => 'Sign in to manage your bookings and trips.',
     'brand_headline' => 'Manage every tour, destination and price in one place.',
     'brand_subheadline' => 'The administration dashboard for your tourism catalogue — bilingual, multi-currency, and built for the Red Sea.',
     'demo_environment' => 'Local environment',

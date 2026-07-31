@@ -113,10 +113,20 @@
                     </div>
                 @endif
             </div>
-            <form class="space-y-3">
+            <form method="POST" action="{{ route('newsletter.subscribe', ['locale' => $currentLocale]) }}" class="space-y-3">
+                @csrf
                 <p class="font-semibold text-slate-950">{{ __('website.newsletter') }}</p>
-                <input type="email" class="w-full rounded-md border-slate-300" placeholder="{{ __('website.email_placeholder') }}" aria-label="{{ __('website.newsletter') }}">
-                <x-public.button type="button">{{ __('website.subscribe') }}</x-public.button>
+                @if (session('status'))
+                    <p class="text-sm font-medium text-teal-700">{{ session('status') }}</p>
+                @endif
+                {{-- $errors is guarded because this footer renders on error
+                     pages too (the 404 uses this layout), and those are drawn
+                     outside the request that shares the validation bag. --}}
+                @if (isset($errors) && $errors->has('email'))
+                    <p class="text-sm text-red-600">{{ $errors->first('email') }}</p>
+                @endif
+                <input type="email" name="email" value="{{ old('email') }}" class="w-full rounded-md border-slate-300" placeholder="{{ __('website.email_placeholder') }}" aria-label="{{ __('website.newsletter') }}" required>
+                <x-public.button type="submit">{{ __('website.subscribe') }}</x-public.button>
             </form>
         </div>
         <div class="border-t border-slate-200 px-4 py-4 text-center text-sm text-slate-500">&copy; {{ date('Y') }} {{ $company['name'] }}</div>

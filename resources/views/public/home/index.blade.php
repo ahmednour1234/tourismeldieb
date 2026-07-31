@@ -113,10 +113,17 @@
                     <p class="mt-4 text-sm text-slate-400">{{ __('website.blog.empty') }}</p>
                 @endforelse
             </div>
-            <form class="rounded-lg bg-white p-6 text-slate-900">
+            <form method="POST" action="{{ route('newsletter.subscribe', ['locale' => app()->getLocale()]) }}" class="rounded-lg bg-white p-6 text-slate-900">
+                @csrf
                 <h2 class="text-xl font-bold">{{ __('website.newsletter') }}</h2>
-                <input type="email" class="mt-4 w-full rounded-md border-slate-300" placeholder="{{ __('website.email_placeholder') }}">
-                <x-public.button class="mt-4" type="button">{{ __('website.subscribe') }}</x-public.button>
+                @if (session('status'))
+                    <p class="mt-3 text-sm font-medium text-teal-700">{{ session('status') }}</p>
+                @endif
+                @error('email')
+                    <p class="mt-3 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                <input type="email" name="email" value="{{ old('email') }}" class="mt-4 w-full rounded-md border-slate-300" placeholder="{{ __('website.email_placeholder') }}" required>
+                <x-public.button class="mt-4" type="submit">{{ __('website.subscribe') }}</x-public.button>
             </form>
         </div>
     </section>

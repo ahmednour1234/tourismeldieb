@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\ActiveUser;
 use App\Http\Middleware\ApplySessionLocale;
+use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Application;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'active.user' => ActiveUser::class,
             'set.locale' => SetLocale::class,
+            'staff' => EnsureUserIsStaff::class,
         ]);
 
         // Carries the visitor's chosen language onto routes that have no
@@ -33,10 +35,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: ApplySessionLocale::class);
 
         // Already-authenticated visitors hitting guest-only pages (login,
-        // password reset) belong on the dashboard. Without this, the guest
-        // middleware falls back to '/' which resolves to the {locale} home
-        // route and throws for a missing parameter.
-        $middleware->redirectUsersTo(fn (): string => route('admin.dashboard'));
+        // register, password reset) go where they belong: staff to the
+        // dashboard, customers to their account. Without this the guest
+        // middleware falls back to '/', which resolves to the {locale} home
+        // route and throws for a missing parameter — and sending a customer to
+        // /admin would 403 them.
+        $middleware->redirectUsersTo(function ($request): string {
+            return $request->user()?->isStaff()
+                ? route('admin.dashboard')
+                : route('account.dashboard', ['locale' => app()->getLocale()]);
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -19,9 +19,23 @@ final class AdminBladePagesTest extends TestCase
         $this->get('/admin')->assertRedirect('/login');
     }
 
-    public function test_user_without_permission_cannot_access_tour_management(): void
+    public function test_a_customer_is_redirected_out_of_the_admin(): void
     {
+        // No permissions at all → a customer. The staff gate bounces them to
+        // their account rather than showing a dead-end 403.
         $user = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($user)
+            ->get('/admin/tours')
+            ->assertRedirect(route('account.dashboard', ['locale' => 'en']));
+    }
+
+    public function test_staff_without_the_resource_permission_are_forbidden(): void
+    {
+        // Staff (they hold *a* permission) but not tours.view — this is the
+        // per-resource authorization, distinct from the coarse staff gate.
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $user->givePermissionTo(Permission::findOrCreate('currencies.view'));
 
         $this->actingAs($user)->get('/admin/tours')->assertForbidden();
     }

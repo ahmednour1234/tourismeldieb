@@ -28,6 +28,8 @@ final class LoginTest extends TestCase
 
     public function test_user_can_login_with_valid_credentials(): void
     {
+        // A plain user holds no permissions, so login now routes them to their
+        // account — staff-vs-customer routing is covered in RegistrationTest.
         $user = User::factory()->create([
             'email' => 'user@example.com',
             'password' => Hash::make('correct-horse'),
@@ -37,7 +39,7 @@ final class LoginTest extends TestCase
         $this->post('/login', [
             'email' => 'user@example.com',
             'password' => 'correct-horse',
-        ])->assertRedirect(route('admin.dashboard'));
+        ])->assertRedirect(route('account.dashboard', ['locale' => 'en']));
 
         $this->assertAuthenticatedAs($user);
     }

@@ -37,7 +37,10 @@ final class LocalePropagationTest extends TestCase
 
     public function test_admin_dashboard_uses_the_session_locale(): void
     {
+        // Must be staff to reach /admin; a permission-less user is redirected
+        // to their account by the staff gate.
         $user = User::factory()->create(['email_verified_at' => now()]);
+        $user->givePermissionTo(Permission::findOrCreate('tours.view'));
 
         $this->get('/ar');
 

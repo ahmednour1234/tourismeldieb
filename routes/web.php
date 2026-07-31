@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AdminSettingController;
 use App\Http\Controllers\Auth\AuthPageController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Public\AccountController;
 use App\Http\Controllers\Public\BlogController;
 use App\Http\Controllers\Public\BookingController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\DefaultLocaleRedirectController;
 use App\Http\Controllers\Public\DestinationController;
 use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\Public\NewsletterController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Public\TourController;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +27,11 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/login', [AuthPageController::class, 'authenticate'])
         ->middleware('throttle:login')
         ->name('login.authenticate');
+
+    Route::get('/register', [RegisterController::class, 'show'])->name('register');
+    Route::post('/register', [RegisterController::class, 'register'])
+        ->middleware('throttle:6,1')
+        ->name('register.store');
 
     Route::get('/forgot-password', [AuthPageController::class, 'forgotPassword'])->name('password.request');
     Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])
@@ -55,7 +62,7 @@ Route::middleware('auth')->group(function (): void {
 
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'verified', 'active.user'])
+    ->middleware(['auth', 'verified', 'active.user', 'staff'])
     ->group(function (): void {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
@@ -100,6 +107,10 @@ Route::prefix('{locale}')
             ->name('contact.send');
         Route::get('/faq', [PageController::class, 'faq'])->name('faq');
 
+        Route::post('/newsletter', [NewsletterController::class, 'subscribe'])
+            ->middleware('throttle:5,1')
+            ->name('newsletter.subscribe');
+
         // Declared before the /{destinationSlug} catch-all below, which would
         // otherwise swallow /blog and 404 it as a missing destination.
         Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
@@ -116,6 +127,7 @@ Route::prefix('{locale}')
         Route::middleware('auth')->prefix('account')->name('account.')->group(function (): void {
             Route::get('/', [AccountController::class, 'dashboard'])->name('dashboard');
             Route::get('/profile', [AccountController::class, 'profile'])->name('profile');
+            Route::put('/profile', [AccountController::class, 'updateProfile'])->name('profile.update');
             Route::get('/wishlist', [AccountController::class, 'wishlist'])->name('wishlist');
             Route::get('/bookings', [AccountController::class, 'bookings'])->name('bookings');
         });
