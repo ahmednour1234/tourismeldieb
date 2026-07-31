@@ -180,8 +180,11 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['base_currency_id', 'target_currency_id', 'effective_at']);
-            $table->index(['base_currency_id', 'target_currency_id', 'is_active']);
+            // Explicit short names: the auto-generated names exceed MySQL's
+            // 64-character identifier limit (PostgreSQL silently truncates at
+            // 63, MySQL rejects them outright).
+            $table->unique(['base_currency_id', 'target_currency_id', 'effective_at'], 'currency_rates_pair_effective_unique');
+            $table->index(['base_currency_id', 'target_currency_id', 'is_active'], 'currency_rates_pair_active_index');
         });
 
         Schema::create('coupons', function (Blueprint $table): void {
