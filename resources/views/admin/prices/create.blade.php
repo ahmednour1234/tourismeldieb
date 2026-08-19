@@ -1,0 +1,10 @@
+<x-admin.resource-form
+    :resource="$resource"
+    :title="$title"
+    :fields="$fields"
+    :translation-fields="$translationFields"
+    :values="$values"
+    :translation-values="$translationValues"
+    :relation-options="$relationOptions"
+    :languages="$languages"
+/>

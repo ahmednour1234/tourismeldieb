@@ -104,6 +104,16 @@ final class ResourceRequest extends FormRequest
                 $unique->whereNull('deleted_at');
             }
 
+            // Some codes are only unique within a parent: a tour package's
+            // code is unique per tour, so two different tours may each have a
+            // "private" package. Checking it table-wide would reject the
+            // second one for colliding with an unrelated tour's package.
+            $scope = $definition['unique_scope'] ?? null;
+
+            if (is_string($scope)) {
+                $unique->where($scope, $this->input($scope));
+            }
+
             $rules[] = $unique;
         }
 

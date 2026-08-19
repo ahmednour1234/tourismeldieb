@@ -9,8 +9,11 @@ use App\Models\ContactMessage;
 use App\Models\Tour;
 use App\Models\User;
 use App\Notifications\BookingRequestReceived;
+use App\Notifications\BookingRequestSubmitted;
+use App\Shared\Contracts\SettingRepositoryContract;
 use Database\Seeders\TourismCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Activitylog\Models\Activity;
@@ -80,6 +83,68 @@ final class BookingTest extends TestCase
         ]);
     }
 
+    public function test_the_dialling_code_is_joined_onto_the_number(): void
+    {
+        Notification::fake();
+
+        // The trunk zero a German writes domestically is not part of the
+        // international number, so it must not survive the join.
+        $this->post('/en/book', $this->payload([
+            'customer_phone_code' => '+49',
+            'customer_phone' => '0170 1234567',
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('booking_requests', [
+            'customer_phone' => '+49 170 1234567',
+        ]);
+    }
+
+    public function test_a_pasted_international_number_keeps_its_own_code(): void
+    {
+        Notification::fake();
+
+        // Someone who pastes a full number should not get the select's default
+        // code stuck on the front of a number that already has one.
+        $this->post('/en/book', $this->payload([
+            'customer_phone_code' => '+20',
+            'customer_phone' => '+39 333 111222',
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('booking_requests', [
+            'customer_phone' => '+39 333 111222',
+        ]);
+    }
+
+    public function test_a_code_with_no_number_stores_nothing(): void
+    {
+        Notification::fake();
+
+        // The select always has something chosen, so a customer who leaves the
+        // optional phone blank must not be recorded as reachable on "+49".
+        $this->post('/en/book', $this->payload([
+            'customer_phone_code' => '+49',
+            'customer_phone' => '',
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('booking_requests', [
+            'customer_email' => 'sarah@example.com',
+            'customer_phone' => null,
+        ]);
+    }
+
+    public function test_an_unoffered_dialling_code_is_rejected(): void
+    {
+        Notification::fake();
+
+        // A <select> constrains a browser, not a client posting directly.
+        $this->post('/en/book', $this->payload([
+            'customer_phone_code' => '+999',
+            'customer_phone' => '1234567',
+        ]))->assertSessionHasErrors('customer_phone_code');
+
+        $this->assertDatabaseCount('booking_requests', 0);
+    }
+
     public function test_the_customer_is_emailed_a_confirmation(): void
     {
         Notification::fake();
@@ -87,6 +152,63 @@ final class BookingTest extends TestCase
         $this->post('/en/book', $this->payload());
 
         Notification::assertSentOnDemand(BookingRequestReceived::class);
+    }
+
+    public function test_the_operator_is_emailed_the_new_request(): void
+    {
+        Notification::fake();
+
+        $this->post('/en/book', $this->payload());
+
+        // Both halves go out: the customer's confirmation and the operator's
+        // alert. Before the alert existed a request landed in the database and
+        // nobody was told about it.
+        Notification::assertSentOnDemand(
+            BookingRequestSubmitted::class,
+            function (BookingRequestSubmitted $notification, array $channels, object $notifiable): bool {
+                return $notifiable->routes['mail'] === 'Tourshurgada@gmail.com';
+            },
+        );
+    }
+
+    public function test_the_operator_alert_address_follows_the_contact_setting(): void
+    {
+        Notification::fake();
+
+        // The address is a setting, not a constant, so staff can redirect their
+        // own alerts from the admin without a deploy.
+        app(SettingRepositoryContract::class)->put(['contact_email' => 'ops@example.com']);
+
+        $this->post('/en/book', $this->payload());
+
+        Notification::assertSentOnDemand(
+            BookingRequestSubmitted::class,
+            fn (BookingRequestSubmitted $n, array $channels, object $notifiable): bool => $notifiable->routes['mail'] === 'ops@example.com',
+        );
+    }
+
+    public function test_an_unusable_alert_address_still_books_and_still_confirms(): void
+    {
+        Notification::fake();
+
+        // With no usable address the alert is skipped rather than thrown: the
+        // booking is already committed, so an internal alerting problem must
+        // not surface to the visitor as a failed booking.
+        app(SettingRepositoryContract::class)->put(['contact_email' => 'not-an-email']);
+        config(['mail.from.address' => 'not-an-email-either']);
+
+        $this->post('/en/book', $this->payload())
+            ->assertRedirect(route('booking.confirmed', ['locale' => 'en']));
+
+        $this->assertDatabaseHas('booking_requests', [
+            'customer_email' => 'sarah@example.com',
+        ]);
+
+        // The customer is still told we have their request.
+        Notification::assertSentOnDemand(BookingRequestReceived::class);
+        Notification::assertNothingSentTo(
+            (new AnonymousNotifiable)->route('mail', 'not-an-email'),
+        );
     }
 
     public function test_the_reference_is_shown_once_and_not_exposed_in_the_url(): void

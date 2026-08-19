@@ -381,6 +381,7 @@ final class PublicPageService
             ->where('tour_prices.amount_minor', '>', 0)
             ->whereNull('tour_options.deleted_at')
             ->whereNull('tour_prices.deleted_at')
+            ->tap(fn ($query) => $this->whereValidToday($query))
             ->orderBy('tour_prices.amount_minor')
             ->select(['tour_prices.amount_minor', 'currencies.symbol', 'currencies.code', 'currencies.decimal_places'])
             ->first();
@@ -451,6 +452,7 @@ final class PublicPageService
             ->whereIn('tour_prices.guest_type', ['adult', 'private_group'])
             ->where('tour_prices.amount_minor', '>', 0)
             ->whereNull('tour_prices.deleted_at')
+            ->tap(fn ($query) => $this->whereValidToday($query))
             ->orderBy('tour_prices.amount_minor')
             ->select(['tour_prices.amount_minor', 'currencies.symbol', 'currencies.code', 'currencies.decimal_places'])
             ->first();
@@ -465,6 +467,27 @@ final class PublicPageService
             (string) $price->symbol,
             (int) $price->decimal_places,
         );
+    }
+
+    /**
+     * Restrict a price query to rows in force today.
+     *
+     * `valid_from`/`valid_to` are both nullable and mean "no bound on that
+     * side", so a row with neither always applies. Without this a seasonal
+     * price stayed on the card forever once its window closed - which only
+     * became reachable when the admin gained a way to set those dates.
+     */
+    private function whereValidToday(mixed $query): void
+    {
+        $today = now()->toDateString();
+
+        $query->where(function ($outer) use ($today): void {
+            $outer->whereNull('tour_prices.valid_from')
+                ->orWhere('tour_prices.valid_from', '<=', $today);
+        })->where(function ($outer) use ($today): void {
+            $outer->whereNull('tour_prices.valid_to')
+                ->orWhere('tour_prices.valid_to', '>=', $today);
+        });
     }
 
     private function formatMinor(int $amountMinor, int $decimalPlaces, string $symbol, string $code): string

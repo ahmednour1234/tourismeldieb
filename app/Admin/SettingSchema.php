@@ -76,7 +76,7 @@ final class SettingSchema
                 'type' => 'text',
                 'label' => 'admin.settings.fields.contact_email',
                 'rules' => ['nullable', 'email', 'max:255'],
-                'default' => 'hello@hurgadaguide.example',
+                'default' => 'Tourshurgada@gmail.com',
             ],
 
             // --- social --------------------------------------------------

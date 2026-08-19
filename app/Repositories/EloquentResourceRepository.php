@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Admin\Money;
 use App\Admin\ResourceSchema;
 use App\Shared\Contracts\ResourceRepositoryContract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -125,6 +126,26 @@ final class EloquentResourceRepository implements ResourceRepositoryContract
     {
         $query = $this->query($resource);
 
+        // Option names repeat across tours — three different trips each have a
+        // "Private" package. An unqualified list of them is unusable in the
+        // price form, so each is prefixed with the tour it belongs to.
+        if ($resource === 'options') {
+            return $query->with(['translation', 'tour.translation'])
+                ->orderBy('tour_id')
+                ->orderBy('sort_order')
+                ->get()
+                ->mapWithKeys(function (Model $model): array {
+                    $tour = $model->getRelationValue('tour');
+                    $tourName = $tour === null ? null : $this->translatedLabel($tour, 'tours');
+                    $optionName = $this->translatedLabel($model, 'options');
+
+                    return [
+                        $model->getKey() => $tourName === null ? $optionName : $tourName.' — '.$optionName,
+                    ];
+                })
+                ->all();
+        }
+
         if (ResourceSchema::isTranslatable($resource)) {
             $this->applyOrder($query, $resource);
 
@@ -163,6 +184,10 @@ final class EloquentResourceRepository implements ResourceRepositoryContract
             // The edit screen names the tour and the staff member who handled
             // it; without these the listing would query per row.
             'bookings' => ['tour.translation', 'handler'],
+            // An option is meaningless without knowing which tour it belongs
+            // to, and a price without its option and currency.
+            'options' => [...$relations, 'tour.translation'],
+            'prices' => ['option.translation', 'option.tour.translation', 'currency'],
             default => $relations,
         };
     }
@@ -183,6 +208,21 @@ final class EloquentResourceRepository implements ResourceRepositoryContract
                 $outer->where('reference', 'like', $term)
                     ->orWhere('customer_name', 'like', $term)
                     ->orWhere('customer_email', 'like', $term);
+            });
+
+            return;
+        }
+
+        // A price row has no name of its own. Staff look for "the Luxor private
+        // car price", so the term is matched against the option and the tour it
+        // belongs to rather than against the literal `guest_type` column, which
+        // would only ever match someone typing "adult".
+        if ($resource === 'prices') {
+            $query->where(function (Builder $outer) use ($term): void {
+                $outer->whereHas('option.translations', fn (Builder $sub): Builder => $sub->where('name', 'like', $term))
+                    ->orWhereHas('option.tour.translations', fn (Builder $sub): Builder => $sub->where('name', 'like', $term))
+                    ->orWhereHas('option', fn (Builder $sub): Builder => $sub->where('code', 'like', $term))
+                    ->orWhere('guest_type', 'like', $term);
             });
 
             return;
@@ -225,6 +265,16 @@ final class EloquentResourceRepository implements ResourceRepositoryContract
             return;
         }
 
+        // Price lines read as a rate card: all of one option's rows together,
+        // cheapest first. `prices` has no sort_order and its label column is
+        // `guest_type`, so without this the list would be an alphabetical
+        // jumble of adult/child rows from unrelated tours.
+        if ($resource === 'prices') {
+            $query->orderBy('tour_option_id')->orderBy('amount_minor');
+
+            return;
+        }
+
         if ($this->hasColumn($model->getTable(), 'sort_order')) {
             $query->orderBy('sort_order');
             $query->orderBy($model->getKeyName());
@@ -250,6 +300,7 @@ final class EloquentResourceRepository implements ResourceRepositoryContract
     private function prepareAttributes(string $resource, array $attributes, bool $isCreate): array
     {
         $attributes = $this->prepareUserPassword($resource, $attributes, $isCreate);
+        $attributes = $this->prepareMoney($resource, $attributes);
 
         $table = ResourceSchema::table($resource);
         $userId = auth()->id();
@@ -269,6 +320,40 @@ final class EloquentResourceRepository implements ResourceRepositoryContract
                 $attributes['handled_by'] = $userId;
                 $attributes['handled_at'] = now();
             }
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Convert every `money` field from the major units the form collects into
+     * the minor units the column stores.
+     *
+     * The scale depends on the row's currency, so the conversion reads the
+     * `currency_id` being saved alongside the amount rather than assuming 100
+     * — a JPY price of 5000 is 5000 minor units, not 500000.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    private function prepareMoney(string $resource, array $attributes): array
+    {
+        $currencyId = isset($attributes['currency_id']) ? (int) $attributes['currency_id'] : null;
+
+        foreach (ResourceSchema::fields($resource) as $name => $field) {
+            if (($field['type'] ?? null) !== 'money' || ! array_key_exists($name, $attributes)) {
+                continue;
+            }
+
+            $value = $attributes[$name];
+
+            if ($value === null || $value === '') {
+                unset($attributes[$name]);
+
+                continue;
+            }
+
+            $attributes[$name] = Money::toMinor($value, $currencyId);
         }
 
         return $attributes;

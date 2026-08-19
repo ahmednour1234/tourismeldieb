@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Admin\DeleteResourceAction;
 use App\Actions\Admin\StoreResourceAction;
 use App\Actions\Admin\UpdateResourceAction;
+use App\Admin\Money;
 use App\Admin\ResourceSchema;
 use App\DataTransferObjects\ResourceData;
 use App\Exceptions\DomainActionException;
@@ -200,9 +201,24 @@ final class AdminResourceController
     {
         $values = [];
 
-        foreach (array_keys($fields) as $name) {
+        foreach ($fields as $name => $field) {
             // A password is never echoed back into the form.
-            $values[$name] = $name === 'password' ? null : $model->getAttribute($name);
+            if ($name === 'password') {
+                $values[$name] = null;
+
+                continue;
+            }
+
+            $value = $model->getAttribute($name);
+
+            // Money is stored in minor units but edited in major ones, so the
+            // stored 1950 has to come back out as 19.50 or every save would
+            // multiply the price by a hundred.
+            if (($field['type'] ?? null) === 'money') {
+                $value = Money::toMajor($value, $model->getAttribute('currency_id'));
+            }
+
+            $values[$name] = $value;
         }
 
         $translationValues = [];
@@ -286,10 +302,7 @@ final class AdminResourceController
         return [
             'id' => $model->getKey(),
             'name' => $this->label($resource, $model),
-            // Bookings have no `code`; the useful second column is who asked.
-            'code' => $resource === 'bookings'
-                ? $model->getAttribute('customer_name')
-                : $model->getAttribute('code'),
+            'code' => $this->secondaryColumn($resource, $model),
             'status' => $this->status($model),
         ];
     }
@@ -300,6 +313,26 @@ final class AdminResourceController
      */
     private function label(string $resource, Model $model): string
     {
+        // A price has no name of its own: what identifies it is which option it
+        // prices and for whom. Falling through to the label column would print
+        // a column of bare "adult"s with nothing to tell them apart.
+        if ($resource === 'prices') {
+            return $this->priceLabel($model);
+        }
+
+        // An option name repeats across tours, so it is qualified by its tour
+        // for the same reason the relation select is.
+        if ($resource === 'options') {
+            $name = $model->getRelationValue('translation')?->getAttribute('name');
+            $name = is_string($name) && $name !== '' ? $name : '#'.$model->getKey();
+            $tour = $model->getRelationValue('tour');
+            $tourName = $tour?->getRelationValue('translation')?->getAttribute('name');
+
+            return is_string($tourName) && $tourName !== ''
+                ? Str::limit($tourName.' — '.$name, 60)
+                : $name;
+        }
+
         if (ResourceSchema::isTranslatable($resource)) {
             // The column differs per resource: a post has a `title`, a
             // testimonial only a `quote`.
@@ -318,6 +351,64 @@ final class AdminResourceController
         }
 
         return (string) $model->getAttribute(ResourceSchema::labelColumn($resource));
+    }
+
+    /**
+     * "Luxor Full Day — Private Car · Adult", built from the row's relations.
+     */
+    private function priceLabel(Model $model): string
+    {
+        $option = $model->getRelationValue('option');
+        $parts = [];
+
+        $tourName = $option?->getRelationValue('tour')?->getRelationValue('translation')?->getAttribute('name');
+
+        if (is_string($tourName) && $tourName !== '') {
+            $parts[] = $tourName;
+        }
+
+        $optionName = $option?->getRelationValue('translation')?->getAttribute('name')
+            ?? $option?->getAttribute('code');
+
+        if (is_string($optionName) && $optionName !== '') {
+            $parts[] = $optionName;
+        }
+
+        $guestType = (string) $model->getAttribute('guest_type');
+        $guest = __('admin.guest_types.'.$guestType);
+
+        // A guest type added to the column but not to the translation file must
+        // still read as something: fall back to the raw key rather than the
+        // literal "admin.guest_types.whatever" Laravel returns for a miss.
+        $guest = is_string($guest) && ! str_starts_with($guest, 'admin.') ? $guest : $guestType;
+
+        $label = $parts === [] ? '#'.$model->getKey() : implode(' — ', $parts);
+
+        return Str::limit($label.' · '.$guest, 70);
+    }
+
+    /**
+     * The listing's second column: for a price, the amount it actually sets.
+     */
+    private function secondaryColumn(string $resource, Model $model): ?string
+    {
+        if ($resource !== 'prices') {
+            // Bookings have no `code`; the useful second column is who asked.
+            return $resource === 'bookings'
+                ? $model->getAttribute('customer_name')
+                : $model->getAttribute('code');
+        }
+
+        $currency = $model->getRelationValue('currency');
+        $amount = Money::toMajor($model->getAttribute('amount_minor'), $model->getAttribute('currency_id'));
+
+        if ($amount === null) {
+            return null;
+        }
+
+        $code = $currency?->getAttribute('code');
+
+        return is_string($code) && $code !== '' ? $amount.' '.$code : $amount;
     }
 
     private function status(Model $model): ?string

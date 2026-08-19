@@ -31,7 +31,7 @@ final class SettingSeeder extends Seeder
             ],
             'contact_phone' => '+20 100 000 0000',
             'contact_whatsapp' => '+201000000000',
-            'contact_email' => 'hello@hurgadaguide.example',
+            'contact_email' => 'Tourshurgada@gmail.com',
         ];
 
         foreach ($seeded as $key => $value) {

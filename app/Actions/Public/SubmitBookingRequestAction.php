@@ -6,9 +6,12 @@ namespace App\Actions\Public;
 
 use App\Models\BookingRequest;
 use App\Notifications\BookingRequestReceived;
+use App\Notifications\BookingRequestSubmitted;
 use App\Services\Public\BookingRequestService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Throwable;
 
 /**
  * Records a booking request and confirms it to the customer.
@@ -32,6 +35,35 @@ final class SubmitBookingRequestAction
         Notification::route('mail', $booking->customer_email)
             ->notify(new BookingRequestReceived($booking));
 
+        $this->notifyOperator($booking);
+
         return $booking;
+    }
+
+    /**
+     * Tell the operator a request has arrived.
+     *
+     * Wrapped in its own try/catch rather than left to bubble: the booking is
+     * already committed and the customer already has their confirmation, so a
+     * failure here is an internal alerting problem, not something to show a
+     * visitor as a failed booking. It is logged so the silence is noticed.
+     */
+    private function notifyOperator(BookingRequest $booking): void
+    {
+        $recipient = $this->service->operatorEmail();
+
+        if ($recipient === null) {
+            return;
+        }
+
+        try {
+            Notification::route('mail', $recipient)
+                ->notify(new BookingRequestSubmitted($booking));
+        } catch (Throwable $exception) {
+            Log::error('Booking request notification to the operator failed.', [
+                'reference' => $booking->reference,
+                'exception' => $exception->getMessage(),
+            ]);
+        }
     }
 }

@@ -7,6 +7,7 @@ namespace App\Services\Public;
 use App\Exceptions\DomainActionException;
 use App\Models\BookingRequest;
 use App\Models\Tour;
+use App\Shared\Contracts\SettingRepositoryContract;
 
 /**
  * Business rules for a public booking request.
@@ -14,6 +15,10 @@ use App\Models\Tour;
 final class BookingRequestService
 {
     private const LOG_NAME = 'bookings';
+
+    public function __construct(
+        private readonly SettingRepositoryContract $settings,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -48,6 +53,33 @@ final class BookingRequestService
             ->log('booking.requested');
 
         return $booking;
+    }
+
+    /**
+     * Where new-booking alerts are sent.
+     *
+     * Read from the `contact_email` setting rather than hardcoded, so the
+     * operator can redirect their own alerts from the admin without a deploy —
+     * the address changes when staff do, and a constant in the source is the
+     * one place they cannot reach.
+     *
+     * Falls back to the configured MAIL_FROM_ADDRESS so a misconfigured
+     * setting means the alert goes somewhere reachable rather than nowhere.
+     */
+    public function operatorEmail(): ?string
+    {
+        $candidates = [
+            $this->settings->get('contact_email'),
+            config('mail.from.address'),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && filter_var($candidate, FILTER_VALIDATE_EMAIL) !== false) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -106,12 +106,9 @@
                                     required
                                 />
                             </div>
-                            <x-forms.input
+                            <x-forms.phone
                                 name="customer_phone"
-                                type="tel"
                                 :label="__('website.forms.phone')"
-                                :value="old('customer_phone')"
-                                autocomplete="tel"
                                 :help="__('website.booking.phone_help')"
                             />
                             <x-forms.textarea

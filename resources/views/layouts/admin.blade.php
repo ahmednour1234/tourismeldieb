@@ -22,6 +22,7 @@
                 @foreach ([
                     __('admin.nav.bookings') => ['bookings'],
                     __('admin.nav.catalog') => ['countries', 'destinations', 'categories', 'tours'],
+                    __('admin.nav.pricing') => ['options', 'prices'],
                     __('admin.nav.content') => ['posts', 'testimonials'],
                     __('admin.nav.localization') => ['languages', 'currencies'],
                     __('admin.nav.users_access') => ['users', 'roles'],

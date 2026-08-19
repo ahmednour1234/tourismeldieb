@@ -13,6 +13,8 @@ use App\Models\Language;
 use App\Models\Testimonial;
 use App\Models\Tour;
 use App\Models\TourCategory;
+use App\Models\TourOption;
+use App\Models\TourPrice;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
@@ -40,7 +42,7 @@ final class ResourceSchema
      */
     public const RESOURCES = [
         'languages', 'currencies', 'countries', 'destinations',
-        'categories', 'tours', 'posts', 'testimonials', 'bookings',
+        'categories', 'tours', 'options', 'prices', 'posts', 'testimonials', 'bookings',
         'users', 'roles', 'settings',
     ];
 
@@ -49,7 +51,34 @@ final class ResourceSchema
      *
      * @var list<string>
      */
-    public const TRANSLATABLE = ['destinations', 'categories', 'tours', 'posts', 'testimonials'];
+    public const TRANSLATABLE = ['destinations', 'categories', 'tours', 'options', 'posts', 'testimonials'];
+
+    /**
+     * The guest types a price line may be written for.
+     *
+     * Per-person rates price by who is travelling; `private_group` is a flat
+     * charge for the whole booking regardless of headcount. The public pages
+     * read `adult` and `private_group` when working out a tour's "from" price,
+     * so those two are what actually surface on the website.
+     *
+     * @var array<string, string>
+     */
+    public const GUEST_TYPES = [
+        'adult' => 'admin.guest_types.adult',
+        'child' => 'admin.guest_types.child',
+        'infant' => 'admin.guest_types.infant',
+        'student' => 'admin.guest_types.student',
+        'senior' => 'admin.guest_types.senior',
+        'private_group' => 'admin.guest_types.private_group',
+    ];
+
+    /**
+     * The guest-type keys as a comma list, for an `in:` validation rule.
+     */
+    public static function guestTypeList(): string
+    {
+        return implode(',', array_keys(self::GUEST_TYPES));
+    }
 
     public static function exists(string $resource): bool
     {
@@ -79,6 +108,8 @@ final class ResourceSchema
             'destinations' => Destination::class,
             'categories' => TourCategory::class,
             'tours' => Tour::class,
+            'options' => TourOption::class,
+            'prices' => TourPrice::class,
             'posts' => BlogPost::class,
             'testimonials' => Testimonial::class,
             'bookings' => BookingRequest::class,
@@ -103,6 +134,9 @@ final class ResourceSchema
             'currencies' => 'code',
             'testimonials' => 'author_name',
             'bookings' => 'reference',
+            // A price line has no name of its own; the listing labels it from
+            // its option and guest type instead (see the repository).
+            'prices' => 'guest_type',
             default => 'name',
         };
     }
@@ -208,6 +242,36 @@ final class ResourceSchema
                 'is_best_seller' => ['type' => 'toggle', 'label' => 'admin.fields.is_best_seller', 'rules' => ['boolean'], 'default' => false],
                 'is_last_minute' => ['type' => 'toggle', 'label' => 'admin.fields.is_last_minute', 'rules' => ['boolean'], 'default' => false],
             ],
+            // A bookable variant of a tour - the thing prices actually hang off.
+            'options' => [
+                'tour_id' => ['type' => 'relation', 'label' => 'admin.fields.tour', 'relation' => 'tours', 'rules' => ['required', 'integer', 'exists:tours,id']],
+                'code' => ['type' => 'text', 'label' => 'admin.fields.code', 'rules' => ['required', 'string', 'max:64'], 'unique' => true, 'unique_scope' => 'tour_id'],
+                'capacity' => ['type' => 'number', 'label' => 'admin.fields.capacity', 'rules' => ['required', 'integer', 'min:1', 'max:65535'], 'default' => 10],
+                'minimum_guests' => ['type' => 'number', 'label' => 'admin.fields.minimum_guests', 'rules' => ['required', 'integer', 'min:1', 'max:65535'], 'default' => 1],
+                'maximum_guests' => ['type' => 'number', 'label' => 'admin.fields.maximum_guests', 'rules' => ['required', 'integer', 'min:1', 'max:65535'], 'default' => 10],
+                'maximum_booking_quantity' => ['type' => 'number', 'label' => 'admin.fields.maximum_booking_quantity', 'rules' => ['required', 'integer', 'min:1', 'max:65535'], 'default' => 10],
+                'duration_value' => ['type' => 'number', 'label' => 'admin.fields.duration_value', 'rules' => ['nullable', 'integer', 'min:1', 'max:65535']],
+                'duration_unit' => ['type' => 'select', 'label' => 'admin.fields.duration_unit', 'options' => ['hour' => 'admin.units.hours', 'day' => 'admin.units.days'], 'rules' => ['nullable', 'in:hour,day'], 'default' => 'hour'],
+                'sort_order' => ['type' => 'number', 'label' => 'admin.fields.sort_order', 'rules' => ['nullable', 'integer', 'min:0', 'max:32767'], 'default' => 0],
+                'is_private' => ['type' => 'toggle', 'label' => 'admin.fields.is_private', 'rules' => ['boolean'], 'default' => false],
+                'is_default' => ['type' => 'toggle', 'label' => 'admin.fields.is_default_option', 'rules' => ['boolean'], 'default' => false, 'help' => 'admin.fields.is_default_option_help'],
+                'is_active' => ['type' => 'toggle', 'label' => 'admin.fields.is_active', 'rules' => ['boolean'], 'default' => true],
+            ],
+            // One price line. `amount_minor` is entered and shown in major
+            // units (19.50) while the column stores minor units (1950), so an
+            // admin never has to think in cents - the repository converts on
+            // the way in and the controller on the way back out.
+            'prices' => [
+                'tour_option_id' => ['type' => 'relation', 'label' => 'admin.fields.tour_option', 'relation' => 'options', 'rules' => ['required', 'integer', 'exists:tour_options,id'], 'help' => 'admin.fields.tour_option_help'],
+                'guest_type' => ['type' => 'select', 'label' => 'admin.fields.guest_type', 'options' => self::GUEST_TYPES, 'rules' => ['required', 'in:'.self::guestTypeList()], 'default' => 'adult', 'help' => 'admin.fields.guest_type_help'],
+                'currency_id' => ['type' => 'relation', 'label' => 'admin.fields.currency', 'relation' => 'currencies', 'rules' => ['required', 'integer', 'exists:currencies,id']],
+                'amount_minor' => ['type' => 'money', 'label' => 'admin.fields.amount', 'rules' => ['required', 'numeric', 'min:0', 'max:99999999'], 'help' => 'admin.fields.amount_help'],
+                'minimum_quantity' => ['type' => 'number', 'label' => 'admin.fields.minimum_quantity', 'rules' => ['nullable', 'integer', 'min:1', 'max:65535'], 'default' => 1],
+                'maximum_quantity' => ['type' => 'number', 'label' => 'admin.fields.maximum_quantity', 'rules' => ['nullable', 'integer', 'min:1', 'max:65535']],
+                'valid_from' => ['type' => 'date', 'label' => 'admin.fields.valid_from', 'rules' => ['nullable', 'date'], 'help' => 'admin.fields.valid_from_help'],
+                'valid_to' => ['type' => 'date', 'label' => 'admin.fields.valid_to', 'rules' => ['nullable', 'date', 'after_or_equal:valid_from']],
+                'is_active' => ['type' => 'toggle', 'label' => 'admin.fields.is_active', 'rules' => ['boolean'], 'default' => true],
+            ],
             'posts' => [
                 'code' => ['type' => 'text', 'label' => 'admin.fields.code', 'rules' => ['required', 'string', 'max:64'], 'unique' => true],
                 'status' => ['type' => 'select', 'label' => 'admin.fields.status', 'options' => ['draft' => 'admin.status.draft', 'published' => 'admin.status.published', 'archived' => 'admin.status.archived'], 'rules' => ['required', 'in:draft,published,archived'], 'default' => 'draft'],
@@ -274,6 +338,12 @@ final class ResourceSchema
                 'description' => ['type' => 'textarea', 'label' => 'admin.fields.description', 'rules' => ['nullable', 'string']],
                 'seo_title' => ['type' => 'text', 'label' => 'admin.fields.seo_title', 'rules' => ['nullable', 'string', 'max:255']],
                 'seo_description' => ['type' => 'textarea', 'label' => 'admin.fields.seo_description', 'rules' => ['nullable', 'string', 'max:500']],
+            ],
+            'options' => [
+                'name' => ['type' => 'text', 'label' => 'admin.fields.name', 'rules' => ['required', 'string', 'max:255']],
+                'slug' => ['type' => 'text', 'label' => 'admin.fields.slug', 'rules' => ['nullable', 'string', 'max:255'], 'help' => 'admin.fields.slug_help'],
+                'short_description' => ['type' => 'textarea', 'label' => 'admin.fields.short_description', 'rules' => ['nullable', 'string', 'max:500']],
+                'description' => ['type' => 'textarea', 'label' => 'admin.fields.description', 'rules' => ['nullable', 'string']],
             ],
             'posts' => [
                 'title' => ['type' => 'text', 'label' => 'admin.fields.title', 'rules' => ['required', 'string', 'max:255']],

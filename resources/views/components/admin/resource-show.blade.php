@@ -14,6 +14,11 @@
                 {{-- A password hash is never anyone's business, not even an admin's. --}}
                 @continue($field['type'] === 'password')
                 @php($value = $item?->getAttribute($name))
+                {{-- Money is stored in minor units, so the raw attribute would
+                     read as 1950 where the admin typed 19.50. --}}
+                @php($value = $field['type'] === 'money'
+                    ? \App\Admin\Money::toMajor($value, $item?->getAttribute('currency_id'))
+                    : $value)
                 <div @class(['md:col-span-2' => $field['type'] === 'textarea'])>
                     <dt class="text-sm font-semibold text-slate-500 dark:text-slate-400">{{ __($field['label']) }}</dt>
                     <dd class="mt-1 text-slate-950 dark:text-white">

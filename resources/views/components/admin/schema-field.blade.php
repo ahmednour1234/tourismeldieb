@@ -72,6 +72,23 @@
         />
         @break
 
+    @case('money')
+        {{-- Entered in major units (19.50) and stored in minor ones (1950);
+             App\Admin\Money converts in both directions. `step` allows two
+             decimals rather than the whole numbers a bare number input would
+             enforce, which would make every price a round dollar. --}}
+        <x-forms.input
+            :name="$name"
+            type="number"
+            step="0.01"
+            min="0"
+            :label="$label"
+            :required="$required"
+            :help="$help"
+            :value="$current"
+        />
+        @break
+
     @case('date')
     @case('datetime')
         {{-- Carbon casts render as "2026-07-16 21:30:00", which a native date

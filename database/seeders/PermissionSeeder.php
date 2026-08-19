@@ -56,7 +56,7 @@ final class PermissionSeeder extends Seeder
 
         // Manages the catalogue but not users, roles, or settings.
         Role::findOrCreate('editor', 'web')->syncPermissions(
-            collect(['languages', 'currencies', 'countries', 'destinations', 'categories', 'tours'])
+            collect(['languages', 'currencies', 'countries', 'destinations', 'categories', 'tours', 'options', 'prices'])
                 ->crossJoin(self::ABILITIES)
                 ->map(fn (array $pair): string => $pair[0].'.'.$pair[1])
                 ->all()
