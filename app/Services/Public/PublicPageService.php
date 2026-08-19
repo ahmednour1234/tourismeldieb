@@ -91,6 +91,11 @@ final class PublicPageService
                 ],
             ]),
             'tour' => $tour,
+            // The cancellation and important-information sections are site-wide
+            // settings rather than per-tour copy, so the page needs them here —
+            // the layout resolves its own copy for the footer, which this view
+            // cannot reach.
+            'settings' => $this->settingsService->company(),
             'options' => isset($tour['id']) ? $this->tourOptions((int) $tour['id']) : [],
             'relatedTours' => array_values(array_filter($this->tours(), fn (array $item): bool => $item['slug'] !== $tourSlug)),
         ];
@@ -163,6 +168,11 @@ final class PublicPageService
                 'tour_translations.slug',
                 'tour_translations.short_description',
                 'tour_translations.description',
+                'tour_translations.highlights',
+                'tour_translations.itinerary',
+                'tour_translations.included',
+                'tour_translations.excluded',
+                'tour_translations.faqs',
                 'destination_translations.name as destination_name',
                 'destination_translations.slug as destination_slug',
                 'tour_category_translations.name as category_name',
@@ -179,6 +189,14 @@ final class PublicPageService
                     'name' => (string) $tour->name,
                     'short_description' => (string) $tour->short_description,
                     'description' => (string) $tour->description,
+                    // The tour page renders each of these as its own section
+                    // and hides the section when the list is empty, so an
+                    // unwritten itinerary shows nothing rather than filler.
+                    'highlights' => $this->listColumn($tour->highlights),
+                    'itinerary' => $this->listColumn($tour->itinerary),
+                    'included' => $this->listColumn($tour->included),
+                    'excluded' => $this->listColumn($tour->excluded),
+                    'faqs' => $this->faqColumn($tour->faqs),
                     'duration' => $this->durationLabel($tour->duration_value, $tour->duration_unit),
                     'languages' => $this->operatingLanguages((int) $tour->id),
                     'featured' => (bool) $tour->is_featured,
@@ -340,10 +358,83 @@ final class PublicPageService
         }
     }
 
+    /**
+     * Decode a JSON list column into a list of non-empty strings.
+     *
+     * These columns are written by the admin as one item per line and stored as
+     * JSON. They are read here rather than through the model because the tour
+     * listing is a query builder join, not an Eloquent hydrate, so the model's
+     * `array` cast never runs.
+     *
+     * Anything that is not a usable list decodes to an empty one: a malformed
+     * value should make its section disappear, not raise on a public page.
+     *
+     * @return list<string>
+     */
+    private function listColumn(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = json_decode($value, true);
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $items = [];
+
+        foreach ($value as $item) {
+            if (is_string($item) && trim($item) !== '') {
+                $items[] = trim($item);
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * Decode the FAQ column into question/answer pairs.
+     *
+     * Stored as a list of {question, answer} objects. A pair missing either
+     * half is dropped rather than rendered as a question with no answer.
+     *
+     * @return list<array{question: string, answer: string}>
+     */
+    private function faqColumn(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = json_decode($value, true);
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $faqs = [];
+
+        foreach ($value as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $question = trim((string) ($item['question'] ?? ''));
+            $answer = trim((string) ($item['answer'] ?? ''));
+
+            if ($question !== '' && $answer !== '') {
+                $faqs[] = ['question' => $question, 'answer' => $answer];
+            }
+        }
+
+        return $faqs;
+    }
+
     private function durationLabel(mixed $value, mixed $unit): string
     {
+        // An unset duration renders as nothing at all. It previously said
+        // "Booking will be available soon", which is not what a missing
+        // duration means and read as though the tour were not yet on sale.
         if ($value === null || $unit === null) {
-            return __('website.booking_soon');
+            return '';
         }
 
         $unitLabel = $unit === 'hour' ? __('website.hours') : (string) $unit;

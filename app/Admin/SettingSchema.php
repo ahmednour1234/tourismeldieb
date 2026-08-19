@@ -22,7 +22,7 @@ final class SettingSchema
      *
      * @var list<string>
      */
-    public const GROUPS = ['company', 'contact', 'social'];
+    public const GROUPS = ['company', 'policies', 'contact', 'social'];
 
     /**
      * @return array<string, array<string, mixed>>
@@ -51,6 +51,31 @@ final class SettingSchema
                 'type' => 'text',
                 'label' => 'admin.settings.fields.company_address',
                 'rules' => ['nullable', 'string', 'max:255'],
+                'translatable' => true,
+                'default' => null,
+            ],
+
+            // --- policies ------------------------------------------------
+            // Rendered on every tour page. These are the same across the whole
+            // catalogue in practice, so they live here rather than on each
+            // tour — one edit updates every page. A blank one renders no
+            // section at all, which is why neither carries a default: filler
+            // under a "Cancellation policy" heading is worse than silence.
+            'policy_cancellation' => [
+                'group' => 'policies',
+                'type' => 'textarea',
+                'label' => 'admin.settings.fields.policy_cancellation',
+                'help' => 'admin.settings.fields.policy_cancellation_help',
+                'rules' => ['nullable', 'string', 'max:2000'],
+                'translatable' => true,
+                'default' => null,
+            ],
+            'policy_important' => [
+                'group' => 'policies',
+                'type' => 'textarea',
+                'label' => 'admin.settings.fields.policy_important',
+                'help' => 'admin.settings.fields.policy_important_help',
+                'rules' => ['nullable', 'string', 'max:2000'],
                 'translatable' => true,
                 'default' => null,
             ],

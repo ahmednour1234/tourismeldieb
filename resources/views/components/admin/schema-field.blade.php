@@ -72,6 +72,22 @@
         />
         @break
 
+    @case('list')
+        {{-- A JSON array column, edited as one item per line: a repeater would
+             be the richer control, but this stays inside the plain-form
+             pattern every other field here uses and is faster to fill in. The
+             lines are split back into an array on submit — see
+             ResourceRequest::prepareForValidation. --}}
+        <x-forms.textarea
+            :name="$name"
+            :label="$label"
+            :required="$required"
+            :help="$help"
+            :value="$current"
+            rows="6"
+        />
+        @break
+
     @case('money')
         {{-- Entered in major units (19.50) and stored in minor ones (1950);
              App\Admin\Money converts in both directions. `step` allows two

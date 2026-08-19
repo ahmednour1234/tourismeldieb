@@ -30,6 +30,11 @@ final class PageController
 
     public function faq(): View
     {
-        return view('public.faq.index', ['seo' => $this->seoService->page(['title' => __('website.nav.faq')])]);
+        return view('public.faq.index', [
+            'seo' => $this->seoService->page(['title' => __('website.nav.faq')]),
+            // The questions are the site-wide policies, so the page needs the
+            // settings the layout resolves only for its own footer.
+            'settings' => $this->settingsService->company(),
+        ]);
     }
 }

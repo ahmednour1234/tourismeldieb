@@ -11,28 +11,71 @@
                 <h1 class="mt-4 text-4xl font-black text-slate-950">{{ $tour['name'] }}</h1>
                 <p class="mt-3 text-lg text-slate-600">{{ $tour['short_description'] }}</p>
 
+                {{-- Every section below renders only when the tour actually has
+                     that content. This block previously printed the company
+                     boilerplate under nine different headings and "Booking will
+                     be available soon" under two more, which told a visitor
+                     nothing about the tour and read as though it were not on
+                     sale. An unwritten section is now simply absent. --}}
+                @if ($tour['description'] !== '')
+                    <section class="mt-8 rounded-lg bg-white p-6 shadow-sm">
+                        <h2 class="text-xl font-bold text-slate-950">{{ __('website.tours.details') }}</h2>
+                        <p class="mt-3 whitespace-pre-line text-slate-600">{{ $tour['description'] }}</p>
+                    </section>
+                @endif
+
                 @foreach ([
-                    __('website.tours.details') => $tour['description'],
-                    __('website.tours.highlights') => __('website.company_description'),
-                    __('website.tours.itinerary') => __('website.company_description'),
-                    __('website.tours.included') => __('website.company_description'),
-                    __('website.tours.excluded') => __('website.company_description'),
-                    __('website.tours.requirements') => __('website.company_description'),
-                    __('website.tours.recommendations') => __('website.company_description'),
-                    __('website.tours.pickup') => __('website.company_address'),
-                    __('website.tours.meeting') => __('website.company_address'),
-                    __('website.tours.cancellation') => __('website.booking_soon'),
-                    __('website.tours.important') => __('website.booking_soon'),
-                ] as $heading => $copy)
+                    __('website.tours.highlights') => $tour['highlights'],
+                    __('website.tours.itinerary') => $tour['itinerary'],
+                    __('website.tours.included') => $tour['included'],
+                    __('website.tours.excluded') => $tour['excluded'],
+                ] as $heading => $items)
+                    @continue($items === [])
                     <section class="mt-8 rounded-lg bg-white p-6 shadow-sm">
                         <h2 class="text-xl font-bold text-slate-950">{{ $heading }}</h2>
-                        <p class="mt-3 text-slate-600">{{ $copy }}</p>
+                        <ul class="mt-3 space-y-2 text-slate-600">
+                            @foreach ($items as $item)
+                                <li class="flex gap-2">
+                                    <span aria-hidden="true" class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-700"></span>
+                                    <span>{{ $item }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
                     </section>
                 @endforeach
+
+                {{-- Site-wide policies, edited once in admin Settings. Each is
+                     omitted entirely until it has been written. --}}
+                @foreach ([
+                    __('website.tours.cancellation') => $settings['policy_cancellation'] ?? '',
+                    __('website.tours.important') => $settings['policy_important'] ?? '',
+                ] as $heading => $policy)
+                    @continue($policy === '')
+                    <section class="mt-8 rounded-lg bg-white p-6 shadow-sm">
+                        <h2 class="text-xl font-bold text-slate-950">{{ $heading }}</h2>
+                        <p class="mt-3 whitespace-pre-line text-slate-600">{{ $policy }}</p>
+                    </section>
+                @endforeach
+
+                @if ($tour['faqs'] !== [])
+                    <section class="mt-8 rounded-lg bg-white p-6 shadow-sm">
+                        <h2 class="text-xl font-bold text-slate-950">{{ __('website.nav.faq') }}</h2>
+                        <div class="mt-3 space-y-4">
+                            @foreach ($tour['faqs'] as $faq)
+                                <div>
+                                    <h3 class="font-semibold text-slate-900">{{ $faq['question'] }}</h3>
+                                    <p class="mt-1 whitespace-pre-line text-slate-600">{{ $faq['answer'] }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
             </article>
             <aside class="lg:sticky lg:top-24 lg:self-start">
                 <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-                    <p class="text-sm font-semibold text-slate-500">{{ $tour['duration'] }}</p>
+                    @if ($tour['duration'] !== '')
+                        <p class="text-sm font-semibold text-slate-500">{{ $tour['duration'] }}</p>
+                    @endif
                     <p class="mt-3 rounded-md bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ $tour['starting_price_label'] ?? __('website.price_soon') }}</p>
                     <p class="mt-3 text-sm text-slate-600">{{ __('website.booking.no_payment_notice') }}</p>
                     <x-public.button
@@ -61,7 +104,7 @@
                                         </x-public.badge>
                                     </div>
                                     <div class="mt-3 flex flex-wrap gap-2 text-sm text-slate-700">
-                                        <span>{{ $option['duration'] }}</span>
+                                        @if ($option['duration'] !== '')<span>{{ $option['duration'] }}</span>@endif
                                         <span>{{ __('website.tours.capacity') }}: {{ $option['capacity'] }}</span>
                                         <span class="font-semibold text-teal-800">{{ $option['price_label'] ?? __('website.price_soon') }}</span>
                                     </div>

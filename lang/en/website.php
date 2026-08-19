@@ -12,7 +12,7 @@ return [
     'hours' => 'hours',
     'price_from' => 'From :price',
     'price_soon' => 'Price available soon',
-    'booking_soon' => 'Booking will be available soon.',
+    'faq_empty' => 'We have not published our policies here yet. Email us at :email and we will answer any question about a trip.',
     'whatsapp' => 'WhatsApp',
     'live_chat' => 'Live chat',
     'cookie_notice' => 'Cookie preferences',

@@ -35,6 +35,11 @@ final class UiSettingsService
             'whatsapp' => $this->settings->get('contact_whatsapp'),
             'email' => $this->settings->get('contact_email'),
             'address' => $this->settings->get('company_address') ?? __('website.company_address'),
+            // No __() fallback on purpose: an unwritten policy must render as
+            // nothing so its section disappears, rather than as boilerplate
+            // under a "Cancellation policy" heading.
+            'policy_cancellation' => (string) ($this->settings->get('policy_cancellation') ?? ''),
+            'policy_important' => (string) ($this->settings->get('policy_important') ?? ''),
             // Only links that are actually set: the previous default of '#'
             // rendered dead social icons on every page.
             'social' => array_filter([

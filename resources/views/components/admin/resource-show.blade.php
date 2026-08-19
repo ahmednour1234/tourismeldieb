@@ -52,7 +52,20 @@
                                     @continue(blank($values[$name] ?? null))
                                     <div>
                                         <dt class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ __($field['label']) }}</dt>
-                                        <dd class="mt-0.5 text-sm text-slate-800 dark:text-slate-100">{{ $values[$name] }}</dd>
+                                        {{-- A list field's value is a JSON array; echoing one
+                                             directly is a fatal error, so it renders as the
+                                             bullets it will become on the public page. --}}
+                                        @if (is_array($values[$name]))
+                                            <dd class="mt-0.5 text-sm text-slate-800 dark:text-slate-100">
+                                                <ul class="list-disc space-y-0.5 ps-5">
+                                                    @foreach ($values[$name] as $item)
+                                                        <li>{{ $item }}</li>
+                                                    @endforeach
+                                                </ul>
+                                            </dd>
+                                        @else
+                                            <dd class="mt-0.5 text-sm text-slate-800 dark:text-slate-100">{{ $values[$name] }}</dd>
+                                        @endif
                                     </div>
                                 @endforeach
                             </dl>

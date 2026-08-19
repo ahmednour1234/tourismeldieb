@@ -24,7 +24,9 @@
             <p class="mt-2 text-sm text-slate-600">{{ $tour['short_description'] }}</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <span class="text-sm text-slate-700">{{ $tour['duration'] }}</span>
+            @if ($tour['duration'] !== '')
+                <span class="text-sm text-slate-700">{{ $tour['duration'] }}</span>
+            @endif
             <x-public.rating />
             @foreach ($tour['languages'] as $language)
                 <x-public.language-badge :language="$language" />

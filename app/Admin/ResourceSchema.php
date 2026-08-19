@@ -336,6 +336,14 @@ final class ResourceSchema
                 'slug' => ['type' => 'text', 'label' => 'admin.fields.slug', 'rules' => ['nullable', 'string', 'max:255'], 'help' => 'admin.fields.slug_help'],
                 'short_description' => ['type' => 'textarea', 'label' => 'admin.fields.short_description', 'rules' => ['nullable', 'string', 'max:500']],
                 'description' => ['type' => 'textarea', 'label' => 'admin.fields.description', 'rules' => ['nullable', 'string']],
+                // Stored as JSON arrays, edited as one item per line. These
+                // columns already existed but had no form behind them, so the
+                // tour page rendered the company blurb under "Highlights",
+                // "Itinerary", "Included" and "Excluded" for every tour.
+                'highlights' => ['type' => 'list', 'label' => 'admin.fields.highlights', 'rules' => ['nullable', 'array'], 'help' => 'admin.fields.list_help'],
+                'itinerary' => ['type' => 'list', 'label' => 'admin.fields.itinerary', 'rules' => ['nullable', 'array'], 'help' => 'admin.fields.list_help'],
+                'included' => ['type' => 'list', 'label' => 'admin.fields.included', 'rules' => ['nullable', 'array'], 'help' => 'admin.fields.list_help'],
+                'excluded' => ['type' => 'list', 'label' => 'admin.fields.excluded', 'rules' => ['nullable', 'array'], 'help' => 'admin.fields.list_help'],
                 'seo_title' => ['type' => 'text', 'label' => 'admin.fields.seo_title', 'rules' => ['nullable', 'string', 'max:255']],
                 'seo_description' => ['type' => 'textarea', 'label' => 'admin.fields.seo_description', 'rules' => ['nullable', 'string', 'max:500']],
             ],

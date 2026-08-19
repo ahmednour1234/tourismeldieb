@@ -48,6 +48,12 @@ final class ResourceRequest extends FormRequest
                 $fieldRules = $definition['rules'] ?? [];
 
                 $rules["translations.{$locale}.{$field}"] = $this->translationRules($fieldRules, $locale);
+
+                // A list field validates its items too, or the `array` rule
+                // would accept a single 50KB paragraph pasted as one bullet.
+                if (($definition['type'] ?? null) === 'list') {
+                    $rules["translations.{$locale}.{$field}.*"] = ['string', 'max:500'];
+                }
             }
         }
 
@@ -77,6 +83,66 @@ final class ResourceRequest extends FormRequest
         if ($normalised !== []) {
             $this->merge($normalised);
         }
+
+        $this->splitListFields($resource);
+    }
+
+    /**
+     * Turn each `list` field's textarea back into an array.
+     *
+     * The control posts one item per line because a repeater would not fit the
+     * plain-form pattern the rest of this admin uses. The column is JSON, so
+     * the lines are split here — before validation, so `array` rules see an
+     * array rather than a string.
+     *
+     * Blank lines are dropped: a trailing newline is what a person naturally
+     * leaves behind, and it must not become an empty bullet on the tour page.
+     */
+    private function splitListFields(string $resource): void
+    {
+        $listFields = array_keys(array_filter(
+            ResourceSchema::translationFields($resource),
+            static fn (array $definition): bool => ($definition['type'] ?? null) === 'list',
+        ));
+
+        if ($listFields === []) {
+            return;
+        }
+
+        $translations = $this->input('translations');
+
+        if (! is_array($translations)) {
+            return;
+        }
+
+        foreach ($translations as $locale => $payload) {
+            if (! is_array($payload)) {
+                continue;
+            }
+
+            foreach ($listFields as $field) {
+                $value = $payload[$field] ?? null;
+
+                // Already an array (a resubmitted form) needs no splitting.
+                if (! is_string($value)) {
+                    continue;
+                }
+
+                $items = [];
+
+                foreach (preg_split('/\r\n|\r|\n/', $value) ?: [] as $line) {
+                    $line = trim($line);
+
+                    if ($line !== '') {
+                        $items[] = $line;
+                    }
+                }
+
+                $translations[$locale][$field] = $items;
+            }
+        }
+
+        $this->merge(['translations' => $translations]);
     }
 
     /**
